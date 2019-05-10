@@ -1,0 +1,77 @@
+import pandas as pd
+X_rev_exp = pd.read_csv('../data/FT_Camp_1/X_rev_exp_4_10.csv',encoding='gbk',engine='python')
+X_rev_exp['数据日期'] = pd.to_datetime(X_rev_exp['数据日期'])
+#将理财数据作为异常删除
+X_rev_exp_train = X_rev_exp[X_rev_exp['摘要代码'] != 'FP05'] 
+X_rev_exp_train = X_rev_exp_train.groupby(['数据日期','借贷方向代码','客户编号'])[['交易金额']].sum().reset_index()
+
+def extract_client(data,number,string):
+    '''
+    提取单个用户信息
+    '''
+    client = data[data['客户编号'] == number]
+    return client[client['借贷方向代码'] == string].reset_index(drop=True)
+    
+    
+def pre_prophet(data):
+    '''
+    预处理，prophet预测
+    '''
+    data.rename(columns={'交易金额':'y','数据日期':'ds'},inplace=True)
+    return data   
+    
+    def _expenses(x):
+    '''
+    about data_out
+    '''
+    if x > 0:
+        return 0
+    return round(x,2)
+
+def _income(x):
+    '''
+    about data_in
+    '''
+    if x < 0:
+        return 0
+    return round(x,2)
+  
+import fbprophet
+#读取要求输出文件，了解需要预测的时间跨度   
+Y = pd.read_csv('../data/FT_Camp_1/Y_sample.csv',encoding='gbk',engine='python')
+Y['date'] = pd.to_datetime(Y['date'])
+
+#输出结果
+Y_sample = pd.DataFrame(columns=['userid','ds','expenses','income'])
+
+#预测633名客户的收支数据
+for id in range(1,634):
+    print(id)
+    forcast_data = Y[Y['userid'] == id].reset_index(drop=True)
+    for string in ['C','D']:
+        print(string)
+        client_data = extract_client(X_rev_exp_train,id,string)
+        train_data = pre_prophet(client_data)
+        #print(train_data)
+        forecast_model = fbprophet.Prophet(
+                weekly_seasonality=True,
+                holidays=None,
+                )
+        forecast_model.fit(train_data)
+        forecast = forecast_model.predict(forcast_data)
+        if string == 'C':
+            forcast_data['income'] = forecast['yhat']
+            #print(forcast_data['income'])
+            forcast_data['income'] = forcast_data['income'].apply(lambda x: _income(x))
+        else:
+            forcast_data['expenses'] = forecast['yhat']
+            forcast_data['expenses'] = forcast_data['expenses'].apply(lambda x: _expenses(x))
+
+      
+    Y_sample = Y_sample.append(forcast_data)
+    
+Y_sample.rename(columns={'ds':'date'},inplace=True)
+Y_sample = Y_sample.reset_index(drop=True)
+Y_sample.to_csv('Y_sample.csv',index=False)
+
+Y.rename(columns={'date':'ds'},inplace=True)
