@@ -74,4 +74,9 @@ Y_sample.rename(columns={'ds':'date'},inplace=True)
 Y_sample = Y_sample.reset_index(drop=True)
 Y_sample.to_csv('Y_sample.csv',index=False)
 
-Y.rename(columns={'date':'ds'},inplace=True)
+import datetime
+#11月份开户的用户，作为预测修正
+X_finance_11 = X_finance[X_finance['开户日期'] > datetime.datetime.strptime('2018-10-31','%Y-%m-%d')].reset_index(drop=True)
+#X_finance_11
+
+
