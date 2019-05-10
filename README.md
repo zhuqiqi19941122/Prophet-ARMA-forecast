@@ -18,6 +18,7 @@ usage： python Prophet_model
 
 requirments: python3,pandas,numpy,matplotlib,datetime,fbprophet
 
-tip: 数据不能下载
 
-
+X_rev_exp_4_10.csv 是个人用户4月份到10月份的收支数据的部分
+X_finance.csv 是理财数据的的部分
+X_finance_11 是所有用户在11月份开户的信息
