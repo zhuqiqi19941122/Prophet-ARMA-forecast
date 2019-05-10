@@ -72,11 +72,18 @@ for id in range(1,634):
     
 Y_sample.rename(columns={'ds':'date'},inplace=True)
 Y_sample = Y_sample.reset_index(drop=True)
-Y_sample.to_csv('Y_sample.csv',index=False)
 
 import datetime
 #11月份开户的用户，作为预测修正
 X_finance_11 = X_finance[X_finance['开户日期'] > datetime.datetime.strptime('2018-10-31','%Y-%m-%d')].reset_index(drop=True)
 #X_finance_11
+for i in range(len(X_finance_11)):
+    _id = X_finance_11.at[i,'客户编号']
+    _date = X_finance_11.at[i,'开户日期']
+    print(_date)
+    _index = Y_sample[(Y_sample.date == _date)&(Y_sample.userid == _id)].index.tolist()
+    #print(X_finance_11.at[i,'账户估值'])
+    Y_sample.at[_index[0],'expenses'] = Y_sample.at[_index[0],'expenses'] - X_finance_11.at[i,'账户市值']
 
+Y_sample.to_csv('Y_sample.csv',index=False)
 
